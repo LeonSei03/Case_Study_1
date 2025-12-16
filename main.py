@@ -1,3 +1,3 @@
-import ui_device
+import mockup_ui
 
-ui_device.ui() 
+mockup_ui.ui() 
