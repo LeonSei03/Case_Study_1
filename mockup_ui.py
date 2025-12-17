@@ -1,11 +1,11 @@
 import streamlit as st
 
-# Mockup    
+# Mockup
 def ui_devices():
  
     st.write("Hier ist die Geräteverwaltung")
 
-    #Icon einfügen 
+    #Icon einfügen
     st.image("Icons/add_device.png", width=80)
 
     # submit initialisieren
@@ -26,9 +26,33 @@ def ui_devices():
     
     if submit:
         if name == "" or device_id == "":
-            st.error("Bitte alle Pflichtfelder ausfüllen.")
+            st.error("Bitte alle Felder ausfüllen.")
         else:
             st.success("Gerät gespeichert.")
+
+    if aktion == "Gerät ändern":
+        st.subheader("Gerät suchen")
+        search_id = st.text_input("Gerät suchen mit dessen ID (bzw. Inventarnummer)")
+        search_name = st.text_input("Gerät suchen mit dessen Namen:")
+        search_clicked = st.button("Suchen")
+
+        if search_clicked:
+            st.info("Suchergebnis: Gerät gefunden!")
+            st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
+
+            # Hardgecodete Mockup beispiele für wenn ein vorhandenes Gerät ausgegeben wird
+            with st.form("device_edit_form"):
+                name = st.text_input("Name des Geräts",value="3D Drucker")
+                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value="ABC-123")
+                responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value="Simon Ulseß")
+                end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird", value="01/08/2030")
+                submit_edit = st.form_submit_button("Änderungen Speichern")
+            
+            if submit_edit:
+                if name == "" or device_id == "":
+                    st.error("Bitte alle Felder ausfüllen.")
+                else:
+                    st.success("Gerät gespeichert.")
 
 def ui_users():
 
