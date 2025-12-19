@@ -1,4 +1,5 @@
 import streamlit as st
+from devices import Device
 
 # Mockup
 def ui_devices():
@@ -16,19 +17,21 @@ def ui_devices():
 
     if aktion == "Gerät anlegen":
         with st.form("device_form"):
-            name = st.text_input("Name des Geräts")
+            device_name = st.text_input("Name des Geräts")
             device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)")
             responsible_person = st.text_input("Geräteverantwortlicher Nutzer")
             end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird")
             #__last_update = st.text_input("Inventarnummer-ID")
             #__creation_date = st.text_input("Inventarnummer-ID")
             submit = st.form_submit_button("Speichern") # bestätigungsbutton
+            
     
     if submit:
-        if name == "" or device_id == "":
+        if device_name == "" or device_id == "" or responsible_person == "":
             st.error("Bitte alle Felder ausfüllen.")
         else:
             st.success("Gerät gespeichert.")
+            Device.store_data(device_name, device_id, responsible_person)
 
     if aktion == "Gerät ändern":
         st.subheader("Gerät suchen")
@@ -36,9 +39,11 @@ def ui_devices():
         search_name = st.text_input("Gerät suchen mit dessen Namen:")
         search_clicked = st.button("Suchen")
 
-        if search_clicked:
+        search_result = Device.find_by_attribute(search_id, search_name)
+
+        if search_clicked and search_result:
             st.info("Suchergebnis: Gerät gefunden!")
-            st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
+           # st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
 
             # Hardgecodete Mockup beispiele für wenn ein vorhandenes Gerät ausgegeben wird
             with st.form("device_edit_form"):
@@ -47,6 +52,7 @@ def ui_devices():
                 responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value="Simon Ulseß")
                 end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird", value="01/08/2030")
                 submit_edit = st.form_submit_button("Änderungen Speichern")
+            
             
             if submit_edit:
                 if name == "" or device_id == "":

@@ -9,8 +9,9 @@ class Device():
     db_connector = TinyDB(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.json'), storage=serializer).table('devices')
 
     # Constructor
-    def __init__(self, device_name : str, managed_by_user_id : str):
+    def __init__(self, device_name : str, device_id : str, managed_by_user_id : str):
         self.device_name = device_name
+        self.device_id = device_id
         # The user id of the user that manages the device
         # We don't store the user object itself, but only the id (as a key)
         self.managed_by_user_id = managed_by_user_id
@@ -75,8 +76,6 @@ class Device():
         for device_data in Device.db_connector.all():
             devices.append(Device(device_data['device_name'], device_data['managed_by_user_id']))
         return devices
-
-
 
     
 
