@@ -3,7 +3,6 @@ import os
 from tinydb import TinyDB, Query
 from serializer import serializer
 
-
 class Device():
     # Class variable that is shared between all instances of the class
     db_connector = TinyDB(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.json'), storage=serializer).table('devices')
@@ -29,7 +28,8 @@ class Device():
         print("Storing data...")
         # Check if the device already exists in the database
         DeviceQuery = Query()
-        result = self.db_connector.search(DeviceQuery.device_name == self.device_name)
+        # hier wird nun nach der id des Geräts gesucht anstatt nach dem gerätenamen, ist eindeutiger
+        result = self.db_connector.search(DeviceQuery.device_id == self.device_id)
         if result:
             # Update the existing record with the current instance's data
             result = self.db_connector.update(self.__dict__, doc_ids=[result[0].doc_id])
@@ -64,7 +64,12 @@ class Device():
 
         if result:
             data = result[:num_to_return]
-            device_results = [cls(d['device_name'], d['managed_by_user_id']) for d in data]
+            device_results = [
+                cls(d['device_name'], d['device_id'], d['managed_by_user_id']) # weil unser __init__ Konstruktor diese
+                # drei (device_name, device_id, managed_by_user_id) Sachen braucht, müssen wir ihm die auch übergeben
+                # dann übergibt uns die Methode auch die drei Felder wenn wir sie aufrufen und nach einem Gerät suchen
+                for d in data
+            ]
             return device_results if num_to_return > 1 else device_results[0]
         else:
             return None
@@ -73,12 +78,12 @@ class Device():
     def find_all(cls) -> list:
         # Load all data from the database and create instances of the Device class
         devices = []
-        for device_data in Device.db_connector.all():
-            devices.append(Device(device_data['device_name'], device_data['managed_by_user_id']))
+        for d in cls.db_connector.all():
+            devices.append(cls(d['device_name'], d['device_id'], d['managed_by_user_id'])) # hier gleiches wie bei der find_by_attribute Methode
         return devices
 
     
-
+'''
 if __name__ == "__main__":
     # Create a device
     device1 = Device("Device1", "one@mci.edu")
@@ -103,5 +108,4 @@ if __name__ == "__main__":
     print("All devices:")
     for device in devices:
         print(device)
-
-    
+'''

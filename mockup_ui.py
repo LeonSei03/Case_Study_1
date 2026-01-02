@@ -20,18 +20,22 @@ def ui_devices():
             device_name = st.text_input("Name des Geräts")
             device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)")
             responsible_person = st.text_input("Geräteverantwortlicher Nutzer")
-            end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird")
+            # end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird")
             #__last_update = st.text_input("Inventarnummer-ID")
             #__creation_date = st.text_input("Inventarnummer-ID")
             submit = st.form_submit_button("Speichern") # bestätigungsbutton
-            
     
     if submit:
         if device_name == "" or device_id == "" or responsible_person == "":
             st.error("Bitte alle Felder ausfüllen.")
         else:
+            # Device Objekt erstellen (ging vorher nicht, weil das keine Klassenmethode war,
+            # sondern eine Instanzmethode, also kann man nur auf Objekte der Klasse anwenden,
+            # deswegen erst ein KlassenObjekt erstellen)
+            device = Device(device_name, device_id, responsible_person)
+            device.store_data() # in die DB schreiben
             st.success("Gerät gespeichert.")
-            Device.store_data(device_name, device_id, responsible_person)
+            
 
     if aktion == "Gerät ändern":
         st.subheader("Gerät suchen")
@@ -39,25 +43,41 @@ def ui_devices():
         search_name = st.text_input("Gerät suchen mit dessen Namen:")
         search_clicked = st.button("Suchen")
 
-        search_result = Device.find_by_attribute(search_id, search_name)
+        search_result = None
+
+        if search_clicked:
+            if search_id:
+                search_result = Device.find_by_attribute("device_id", search_id)
+            elif search_name:
+                search_result = Device.find_by_attribute("device_name", search_name)
+                search_result = Device.find_by_attribute(search_id, search_name)
 
         if search_clicked and search_result:
             st.info("Suchergebnis: Gerät gefunden!")
-           # st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
+            # st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
 
-            # Hardgecodete Mockup beispiele für wenn ein vorhandenes Gerät ausgegeben wird
             with st.form("device_edit_form"):
-                name = st.text_input("Name des Geräts",value="3D Drucker")
-                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value="ABC-123")
-                responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value="Simon Ulseß")
-                end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird", value="01/08/2030")
+                name = st.text_input("Name des Geräts", value=search_result.device_name)
+                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value=search_result.device_id, disabled=True) # bzgl. disabled=True: wäre doof wenn wir die Device id
+                # ändern und store_data() aber die neue id nicht findet zum abspeicehrn udn dann ein neues objekt anlegt, dann haben wir ein altes objekt noch im
+                # speicher, also nicht änderbar
+                responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value=search_result.managed_by_user_id)
+                # end_of_life muss noch in die store data und __init__ aufgenommen werden. habe ich nicht gemacht weil nicht
+                # weiß ob man das beim Gerät anlegen schon angeben muss
+                # end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird", value="01/08/2030")
                 submit_edit = st.form_submit_button("Änderungen Speichern")
             
             
             if submit_edit:
-                if name == "" or device_id == "":
+                if name == "" or device_id == "" or responsible_person == "":
                     st.error("Bitte alle Felder ausfüllen.")
                 else:
+                    # neue Werte ins Device Objekt rein schreiben
+                    search_result.device_name = name
+                    search_result.device_id = device_id
+                    search_result.managed_by_user_id = responsible_person
+
+                    search_result.store_data()
                     st.success("Gerät gespeichert.")
 
 def ui_users():
