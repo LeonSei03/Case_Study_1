@@ -1,1 +1,1 @@
-{"devices": {"1": {"device_name": "LeonGeraet1", "device_id": "12345", "managed_by_user_id": "Leon", "is_active": true}}, "devices_with_subclass": {}}
+{"devices": {"1": {"device_name": "LeonGeraet1", "device_id": "12345", "managed_by_user_id": "Leon", "is_active": true}}, "devices_with_subclass": {}, "users": {"1": {"name": "Simon Ulsess", "id": "simon.ulsess@gmail.com"}, "2": {"name": "Leon Seibert", "id": "leon.seibert@gmail.com"}}}
