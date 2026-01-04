@@ -1,1 +1,1 @@
-{"devices": {"1": {"device_name": "LeonGeraet1", "device_id": "12345", "managed_by_user_id": "Leon", "is_active": true}}, "devices_with_subclass": {}}
+{"devices": {"1": {"device_name": "LeonGeraet1", "device_id": "12345", "managed_by_user_id": "Leon", "is_active": true}, "2": {"device_name": "Test2Neu", "device_id": "Test2", "managed_by_user_id": "Leon", "is_active": true}, "3": {"device_name": "3D-DruckerV2", "device_id": "SU123", "managed_by_user_id": "SimonV2", "is_active": true}}, "devices_with_subclass": {}}

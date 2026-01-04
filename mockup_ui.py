@@ -3,7 +3,10 @@ from devices import Device
 
 # Mockup
 def ui_devices():
- 
+    
+    if "edit_device_id" not in st.session_state:
+        st.session_state.edit_device_id = None
+
     st.write("Hier ist die Geräteverwaltung")
 
     #Icon einfügen
@@ -35,7 +38,6 @@ def ui_devices():
             device = Device(device_name, device_id, responsible_person)
             device.store_data() # in die DB schreiben
             st.success("Gerät gespeichert.")
-            
 
     if aktion == "Gerät ändern":
         st.subheader("Gerät suchen")
@@ -43,41 +45,49 @@ def ui_devices():
         search_name = st.text_input("Gerät suchen mit dessen Namen:")
         search_clicked = st.button("Suchen")
 
-        search_result = None
-
         if search_clicked:
+            device = None
             if search_id:
-                search_result = Device.find_by_attribute("device_id", search_id)
+                device = Device.find_by_attribute("device_id", search_id)
             elif search_name:
-                search_result = Device.find_by_attribute("device_name", search_name)
-                search_result = Device.find_by_attribute(search_id, search_name)
+                device = Device.find_by_attribute("device_name", search_name)
 
-        if search_clicked and search_result:
-            st.info("Suchergebnis: Gerät gefunden!")
+            if device:
+                st.session_state.edit_device_id = device.device_id # id im edit_device_id vom sessionstate speichern (quasi unser kleiner Speicher während durchlaufen wird)
+                st.info("Suchergebnis: Gerät gefunden!")
+            else:
+                st.session_state.edit_device_id = None
+                st.error("Kein Gerät gefunden.")
+
+        device_to_edit = None
+        if st.session_state.edit_device_id: # wenn wir ne id in der sessionstate gespeicher haben
+            # suche nach dem deivce mit der id aus dem sessionstate mit der Device methode find_by_attribute -> speichern in device_to_edit 
+            device_to_edit = Device.find_by_attribute("device_id", st.session_state.edit_device_id) # neue instanz der Klasse 
+
+        if device_to_edit:
+            # st.info("Suchergebnis: Gerät gefunden!")
             # st.caption("Hinweis: Falls noch kein Gerät existiert, würde hier eine Fehlermeldung auftauchen.")
 
             with st.form("device_edit_form"):
-                name = st.text_input("Name des Geräts", value=search_result.device_name)
-                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value=search_result.device_id, disabled=True) # bzgl. disabled=True: wäre doof wenn wir die Device id
+                name = st.text_input("Name des Geräts", value=device_to_edit.device_name)
+                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value=device_to_edit.device_id, disabled=True) # bzgl. disabled=True: wäre doof wenn wir die Device id
                 # ändern und store_data() aber die neue id nicht findet zum abspeicehrn udn dann ein neues objekt anlegt, dann haben wir ein altes objekt noch im
                 # speicher, also nicht änderbar
-                responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value=search_result.managed_by_user_id)
+                responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value=device_to_edit.managed_by_user_id)
                 # end_of_life muss noch in die store data und __init__ aufgenommen werden. habe ich nicht gemacht weil nicht
                 # weiß ob man das beim Gerät anlegen schon angeben muss
                 # end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird", value="01/08/2030")
                 submit_edit = st.form_submit_button("Änderungen Speichern")
-            
             
             if submit_edit:
                 if name == "" or device_id == "" or responsible_person == "":
                     st.error("Bitte alle Felder ausfüllen.")
                 else:
                     # neue Werte ins Device Objekt rein schreiben
-                    search_result.device_name = name
-                    search_result.device_id = device_id
-                    search_result.managed_by_user_id = responsible_person
+                    device_to_edit.device_name = name # als kleine Erinnerung für mich:) <objekt>.<eigenschaft> = <neuer_wert>
+                    device_to_edit.managed_by_user_id = responsible_person
+                    device_to_edit.store_data()
 
-                    search_result.store_data()
                     st.success("Gerät gespeichert.")
 
 def ui_users():
