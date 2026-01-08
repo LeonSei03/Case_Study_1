@@ -7,8 +7,6 @@ def ui_devices():
     
     if "edit_device_id" not in st.session_state:
         st.session_state.edit_device_id = None
-
-    st.write("Hier ist die Geräteverwaltung")
  
     st.header("Geräte Verwaltung")
 
@@ -22,10 +20,20 @@ def ui_devices():
     aktion = st.radio("Aktion auswählen", ["Gerät anlegen", "Gerät ändern"])
 
     if aktion == "Gerät anlegen":
+
+        users = User.find_all() or []
+        user_options = {f"{u.name} ({u.id})": u.id for u in users}
+
         with st.form("device_form"):
             device_name = st.text_input("Name des Geräts")
             device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)")
-            responsible_person = st.text_input("Geräteverantwortlicher Nutzer")
+
+            if users: 
+                selected_label = st.selectbox("Geräteverantwortlicher Nutzer", options = list(user_options.keys()))
+                responsible_person = user_options[selected_label]
+            else: 
+                st.warning("Es sind noch keine Nutzer angelegt")
+                responsible_person = ""
             # end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird")
             #__last_update = st.text_input("Inventarnummer-ID")
             #__creation_date = st.text_input("Inventarnummer-ID")
@@ -92,8 +100,6 @@ def ui_devices():
                     device_to_edit.store_data()
 
                     st.success("Gerät gespeichert.")
-
-import streamlit as st
 
 def ui_users():
     st.header("Nutzer Verwaltung")

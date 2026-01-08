@@ -1,3 +1,3 @@
-import mockup_ui
+import ui_gesamt
 
-mockup_ui.ui()
+ui_gesamt.ui()
