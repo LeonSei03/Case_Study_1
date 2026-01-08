@@ -1,5 +1,6 @@
 import streamlit as st
 from devices import Device
+from users import User
 
 # Mockup
 def ui_devices():
@@ -8,6 +9,8 @@ def ui_devices():
         st.session_state.edit_device_id = None
 
     st.write("Hier ist die Geräteverwaltung")
+ 
+    st.header("Geräte Verwaltung")
 
     #Icon einfügen
     st.image("Icons/add_device.png", width=80)
@@ -90,27 +93,183 @@ def ui_devices():
 
                     st.success("Gerät gespeichert.")
 
+import streamlit as st
+
 def ui_users():
-
-    st.write("Hier ist die Nutzer-Verwaltung")
-
+    st.header("Nutzer Verwaltung")
     st.image("Icons/user_icon.png", width=80)
+    #Session-States ganz am Anfang initialisiert
+    #streamlit führt bei (fast) jeder Interaktion einen "Rerun" aus...
+    #Variablen, die "normal" im Code sind (z.B. edit_clicked=True) gehen verloren bei reruns ...
 
-        # auswahl für Gerät anlegen oder ändern
-    aktion = st.radio("Aktion auswählen", ["Nutzer anlegen", "Nutzer suchen"])
+    if "user_search_result" not in st.session_state:
+        st.session_state.user_search_result = None  #merkt sich Suchergebnis über Reruns
+
+    if "edit_user_id" not in st.session_state:
+        st.session_state.edit_user_id = None  #merkt sich, welcher Nutzer in "Alle Nutzer" gerade bearbeitet wird
+
+    if "flash_success" not in st.session_state:
+        st.session_state.flash_success = None  #Success-Message, die nach st.rerun() noch sichtbar bleiben soll
+
+    if "flash_error" not in st.session_state:
+        st.session_state.flash_error = None  #Error-Message analog
+
+    if "flash_info" not in st.session_state:
+        st.session_state.flash_info = None  #Info-Message analog
+
+    #Problem vorher und Lösung ... 
+    #setzen von st.success(...) und danach st.rerun()
+    #dadurch wird der aktuelle Render "abgebrochen" und die Message ist weg
+    #wir speichern die Message in session_state (flash_success/flash_error/flash_info)
+    #beim nächsten Rerun wird sie oben angezeigt
+    #danach löschen wir sie sofort, damit sie nur 1x erscheint
+
+    if st.session_state.flash_success:
+        st.success(st.session_state.flash_success)
+        st.session_state.flash_success = None
+
+    if st.session_state.flash_error:
+        st.error(st.session_state.flash_error)
+        st.session_state.flash_error = None
+
+    if st.session_state.flash_info:
+        st.info(st.session_state.flash_info)
+        st.session_state.flash_info = None
+
+    submit = False
+
+    #Auswahl für Nutzer anlegen / anzeigen / suchen
+    aktion = st.radio("Aktion auswählen", ["Nutzer anlegen", "Alle Nutzer anzeigen", "Nutzer suchen"])
+
+    # 1) Nutzer anlegen
 
     if aktion == "Nutzer anlegen":
-        st.text_input("Name")
-        st.text_input("E-Mail-Adresse")
-        st.button("Nutzer anlegen")
+        #st.form sorgt dafür, dass Eingaben nicht bei jedem Tippen Reruns auslösen,sondern erst beim Submit
+        with st.form("user_form"):
+            user_name = st.text_input("Name")
+            user_email = st.text_input("E-Mail-Adresse")
+            submit = st.form_submit_button("Nutzer Anlegen")
+
+        if submit:
+            #strip() entfernt Leerzeichen am Anfang/Ende also weniger Eingabefehler
+            if user_name.strip() == "" or user_email.strip() == "":
+                st.error("Bitte Felder ausfüllen!")
+            else:
+                user = User(user_email, user_name)
+                user.store_data()
+                st.success("Nutzer gespeichert")
+
+    # 2) Alle Nutzer anzeigen 
+    if aktion == "Alle Nutzer anzeigen":
+        users = User.find_all()
+
+        if not users:
+            st.info("Keine Nutzer vorhanden.")
+            return
+
+        st.subheader("Alle Nutzer")
+
+        #Liste
+        for u in users:
+            col1, col2, col3, col4 = st.columns([3, 4, 2, 2])
+
+            with col1:
+                st.write(u.name)
+
+            with col2:
+                st.write(u.id)
+
+            with col3:
+                edit_clicked = st.button("Ändern", key="edit_" + u.id)
+                if edit_clicked:
+                    st.session_state.edit_user_id = u.id
+
+            with col4:
+                delete_clicked = st.button("Löschen", key="delete_" + u.id)
+                if delete_clicked:
+                    u.delete()
+                    #Flash statt st.success direkt + rerun (sonst sieht man es nicht)
+                    st.session_state.flash_success = f"Nutzer {u.id} gelöscht."
+                    #wenn gerade derselbe Nutzer im Edit-Modus war: Edit-Modus beenden
+                    if st.session_state.edit_user_id == u.id:
+                        st.session_state.edit_user_id = None
+                    st.rerun()
+
+            #Edit-Block unter der Zeile NUR anzeigen, wenn dieser User ausgewählt ist
+            if st.session_state.edit_user_id == u.id:
+                st.info(f"Nutzer bearbeiten: {u.id}")
+
+                # Form-Key muss eindeutig sein weil sonst vermischen von den form-states, deswegen + u.id
+                with st.form("edit_form_" + u.id):
+                    new_name = st.text_input("Neuer Name", value=u.name)
+                    st.text_input("E-Mail-Adresse (ID)", value=u.id, disabled=True)
+                    submit_row_edit = st.form_submit_button("Speichern")
+
+                if submit_row_edit:
+                    new_name = new_name.strip()
+                    if new_name == "":
+                        st.error("Name darf nicht leer sein.")
+                    else:
+                        u.name = new_name
+                        u.store_data()
+
+                        #Flash message setzen, Edit-Modus schließen, dann rerunen
+                        st.session_state.flash_success = "Nutzer aktualisiert."
+                        st.session_state.edit_user_id = None
+                        st.rerun()
+
+    # 3) Nutzer suchen 
 
     if aktion == "Nutzer suchen":
-        st.text_input("Name oder E-Mail-Adresse eingeben")
-        st.button("Nutzer suchen")
+        with st.form("search_form"):
+            search_email = st.text_input("Nutzer über E-Mail-Adresse suchen")
+            search_name = st.text_input("Nutzer über Name suchen")
+            search_clicked = st.form_submit_button("Suchen") 
+
+        if search_clicked:
+            if search_email.strip() != "":
+                st.session_state.user_search_result = User.find_by_attribute("id", search_email.strip())
+            elif search_name.strip() != "":
+                st.session_state.user_search_result = User.find_by_attribute("name", search_name.strip())
+            else:
+                st.session_state.user_search_result = None
+
+        search_result = st.session_state.user_search_result
+
+        if search_result:
+            st.info("Suchergebnis: Nutzer gefunden!")
+
+            #erst beim Submit speichern
+            with st.form("user_edit_form"):
+                name = st.text_input("Name", value=search_result.name)
+                email = st.text_input("E-Mail-Adresse", value=search_result.id, disabled=True)
+                submit_edit = st.form_submit_button("Änderungen Speichern")
+
+            if submit_edit:
+                if name.strip() == "":
+                    st.error("Name darf nicht leer sein.")
+                else:
+                    search_result.name = name.strip()
+                    search_result.store_data()
+
+                    st.session_state.flash_success = "Nutzer aktualisiert."
+                    st.session_state.user_search_result = None
+                    st.rerun()
+
+            delete_clicked = st.button("Nutzer löschen")
+            if delete_clicked:
+                search_result.delete()
+                st.session_state.flash_success = "Nutzer gelöscht."
+                st.session_state.user_search_result = None
+                st.rerun()
+
+        elif search_clicked:
+            st.warning("Kein Nutzer gefunden.")
+
 
 def ui_reservations():
 
-    st.write("Hier ist das Reservierungs-System")
+    st.header("Reservierungen")
 
     st.image("Icons/kalender_icon.png", width=80)
 
@@ -122,7 +281,7 @@ def ui_reservations():
 
 def ui_maintenance():
         
-    st.write("Hier ist das Wartungs-Management")
+    st.header("Wartungen")
 
     st.image("Icons/wartung_icon.png", width=80)
 
@@ -131,18 +290,38 @@ def ui_maintenance():
     st.number_input("Wartungskosten pro Quartal (€)", min_value=0)
     st.button("Wartungsdaten speichern")
 
+def ui_dashboard():
+    st.header("Dashboard")
+
+    # Daten einmal aus der Datenbank holen
+    users = User.find_all()
+    devices = Device.find_all()
+
+    # Falls None zurückkommt, sicherheitshalber auf 0 setzen
+    user_count = len(users) if users else 0
+    device_count = len(devices) if devices else 0
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(label="Anzahl Nutzer", value=user_count)
+
+    with col2:
+        st.metric(label="Anzahl Geräte", value=device_count)
+
+
 def ui():
     # Seitenüberschrift - einmal pro Seite
-    st.title("Admin")
+    #st.title("Admin")
 
     # Überschrift
-    st.header('Geräteverwaltung der Hochschule')
+    #st.header('Geräteverwaltung der Hochschule')
 
     # Seitenleiste
-    auswahl = st.sidebar.radio("Menü", ["Dashboard", "Geräte-Verwaltung", "Nutzer-Verwaltung", "Reservierungs-System", "Wartungs-Management",], index=1) # 0=Dashboard, 1=Geräte-Verwaltung
+    auswahl = st.sidebar.radio("Menü", ["Dashboard", "Geräte-Verwaltung", "Nutzer-Verwaltung", "Reservierungs-System", "Wartungs-Management",], index=0) # 0=Dashboard, 1=Geräte-Verwaltung
 
     if auswahl == "Dashboard":
-        st.write("Dashboard")
+        ui_dashboard()
     if auswahl == "Geräte-Verwaltung":
         ui_devices()
     if auswahl == "Nutzer-Verwaltung":
