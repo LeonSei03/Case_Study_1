@@ -8,6 +8,13 @@ def ui_devices():
     if "edit_device_id" not in st.session_state:
         st.session_state.edit_device_id = None
  
+    if "flash_success_geraet" not in st.session_state:
+        st.session_state.flash_success_geraet = None  #Success-Message, die nach st.rerun() noch sichtbar bleiben soll
+
+    if st.session_state.flash_success_geraet:
+        st.success(st.session_state.flash_success_geraet)
+        st.session_state.flash_success_geraet = None
+
     st.header("Geräte Verwaltung")
 
     #Icon einfügen
@@ -17,7 +24,56 @@ def ui_devices():
     submit = False
 
     # auswahl für Gerät anlegen oder ändern
-    aktion = st.radio("Aktion auswählen", ["Gerät anlegen", "Gerät ändern"])
+    aktion = st.radio("Aktion auswählen", ["Gerät anlegen", "Geräte anzeigen", "Gerät ändern"])
+
+    if aktion == "Geräte anzeigen":
+        devices = Device.find_all()
+
+        if not devices:
+            st.info("Kein Gerät vorhanden.")
+            return
+
+        st.subheader("Alle Geräte")
+
+        for d in devices:
+            col1, col2, col3, col4 = st.columns([3, 4, 2, 2])
+
+            with col1:
+                st.write(d.device_name)
+
+            with col2:
+                st.write(d.id)
+
+            with col3:
+                if st.button("Ändern", key=f"edit_{d.id}"):
+                    st.session_state.edit_device_id = d.id
+
+            with col4:
+                if st.button("Löschen", key=f"delete_{d.id}"):
+                    d.delete()
+                    st.session_state.flash_success_geraet = f"Gerät {d.id} gelöscht."
+                    if st.session_state.edit_device_id == d.id:
+                        st.session_state.edit_device_id = None
+                    st.rerun()
+
+            if st.session_state.edit_device_id == d.id:
+                st.info(f"Gerät bearbeiten: {d.id}")
+
+                with st.form(f"edit_form_{d.id}"):
+                    new_device = st.text_input("Neuer Gerätename", value=d.device_name)
+                    st.text_input("Geräte ID", value=d.id, disabled=True)
+                    submit_row_edit = st.form_submit_button("Speichern")
+
+                if submit_row_edit:
+                    new_device = new_device.strip()
+                    if new_device == "":
+                        st.error("Name darf nicht leer sein.")
+                    else:
+                        d.device_name = new_device
+                        d.store_data()
+                        st.session_state.flash_success_geraet = "Gerät aktualisiert."
+                        st.session_state.edit_device_id = None
+                        st.rerun()
 
     if aktion == "Gerät anlegen":
 
@@ -28,10 +84,10 @@ def ui_devices():
             device_name = st.text_input("Name des Geräts")
             device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)")
 
-            if users: 
+            if users:
                 selected_label = st.selectbox("Geräteverantwortlicher Nutzer", options = list(user_options.keys()))
                 responsible_person = user_options[selected_label]
-            else: 
+            else:
                 st.warning("Es sind noch keine Nutzer angelegt")
                 responsible_person = ""
             # end_of_life = st.text_input("Datum, ab welchem das Gerät nicht mehr gewartet wird")
@@ -39,16 +95,16 @@ def ui_devices():
             #__creation_date = st.text_input("Inventarnummer-ID")
             submit = st.form_submit_button("Speichern") # bestätigungsbutton
     
-    if submit:
-        if device_name == "" or device_id == "" or responsible_person == "":
-            st.error("Bitte alle Felder ausfüllen.")
-        else:
-            # Device Objekt erstellen (ging vorher nicht, weil das keine Klassenmethode war,
-            # sondern eine Instanzmethode, also kann man nur auf Objekte der Klasse anwenden,
-            # deswegen erst ein KlassenObjekt erstellen)
-            device = Device(device_name, device_id, responsible_person)
-            device.store_data() # in die DB schreiben
-            st.success("Gerät gespeichert.")
+        if submit:
+            if device_name == "" or device_id == "" or responsible_person == "":
+                st.error("Bitte alle Felder ausfüllen.")
+            else:
+                # Device Objekt erstellen (ging vorher nicht, weil das keine Klassenmethode war,
+                # sondern eine Instanzmethode, also kann man nur auf Objekte der Klasse anwenden,
+                # deswegen erst ein KlassenObjekt erstellen)
+                device = Device(device_name, device_id, responsible_person)
+                device.store_data() # in die DB schreiben
+                st.success("Gerät gespeichert.")
 
     if aktion == "Gerät ändern":
         st.subheader("Gerät suchen")
@@ -59,12 +115,12 @@ def ui_devices():
         if search_clicked:
             device = None
             if search_id:
-                device = Device.find_by_attribute("device_id", search_id)
+                device = Device.find_by_attribute("id", search_id)
             elif search_name:
                 device = Device.find_by_attribute("device_name", search_name)
 
             if device:
-                st.session_state.edit_device_id = device.device_id # id im edit_device_id vom sessionstate speichern (quasi unser kleiner Speicher während durchlaufen wird)
+                st.session_state.edit_device_id = device.id # id im edit_device_id vom sessionstate speichern (quasi unser kleiner Speicher während durchlaufen wird)
                 st.info("Suchergebnis: Gerät gefunden!")
             else:
                 st.session_state.edit_device_id = None
@@ -73,7 +129,7 @@ def ui_devices():
         device_to_edit = None
         if st.session_state.edit_device_id: # wenn wir ne id in der sessionstate gespeicher haben
             # suche nach dem deivce mit der id aus dem sessionstate mit der Device methode find_by_attribute -> speichern in device_to_edit 
-            device_to_edit = Device.find_by_attribute("device_id", st.session_state.edit_device_id) # neue instanz der Klasse 
+            device_to_edit = Device.find_by_attribute("id", st.session_state.edit_device_id) # neue instanz der Klasse 
 
         if device_to_edit:
             # st.info("Suchergebnis: Gerät gefunden!")
@@ -81,7 +137,7 @@ def ui_devices():
 
             with st.form("device_edit_form"):
                 name = st.text_input("Name des Geräts", value=device_to_edit.device_name)
-                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value=device_to_edit.device_id, disabled=True) # bzgl. disabled=True: wäre doof wenn wir die Device id
+                device_id = st.text_input("Eindeutige ID des Geräts (Inventarnummer)", value=device_to_edit.id, disabled=True) # bzgl. disabled=True: wäre doof wenn wir die Device id
                 # ändern und store_data() aber die neue id nicht findet zum abspeicehrn udn dann ein neues objekt anlegt, dann haben wir ein altes objekt noch im
                 # speicher, also nicht änderbar
                 responsible_person = st.text_input("Geräteverantwortlicher Nutzer", value=device_to_edit.managed_by_user_id)
@@ -165,7 +221,7 @@ def ui_users():
                 user.store_data()
                 st.success("Nutzer gespeichert")
 
-    # 2) Alle Nutzer anzeigen 
+    # 2) Alle Nutzer anzeigen
     if aktion == "Alle Nutzer anzeigen":
         users = User.find_all()
 

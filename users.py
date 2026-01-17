@@ -2,71 +2,44 @@ import os
 from tinydb import TinyDB, Query
 from serializer import serializer
 
+from typing import Self
+from datetime import datetime
 
-class User:
+from serializer import Serializable
+from database import DatabaseConnector
 
-    db_connector = TinyDB(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.json'), storage=serializer).table('users')
+class User(Serializable):
 
-    def __init__(self, id, name) -> None:
-        """Create a new user based on the given name and id"""
-        self.name = name #Anzeige-Name
-        self.id = id #Email-Adresse
+    db_connector =  DatabaseConnector().get_table("users")
 
-    def store_data(self)-> None:
+    def __init__(self, id : str , name : str, creation_date: datetime = None, last_update: datetime = None) -> None:
+        super().__init__(id, creation_date, last_update)
+        self.name = name
 
-        """Save the user to the database"""
+    @classmethod
+    def instantiate_from_dict(cls, data: dict) -> Self:
+        return cls(data['id'], data['name'], data['creation_date'], data['last_update'])
 
-        print("Storing user data")
-        q = Query() #Query baut quasi einen Suchfilter
-        
-        existing = User.db_connector.search(q.id == self.id)
-        
-        if existing: 
-            User.db_connector.update(self.__dict__, doc_ids=[existing[0].doc_id])
-            print("User data updated")
-        else: 
-            User.db_connector.insert(self.__dict__)
-            print("User data inserted")
-
-    def delete(self) -> None:
-
-        """Delete the user from the database"""
-
-        q = Query ()
-
-        existing = User.db_connector.search(q.id == self.id)
-
-        if existing: 
-            User.db_connector.remove(doc_ids=[existing[0].doc_id])
-        
-    
     def __str__(self):
-        return f"User {self.id} - {self.name}"
-    
-    def __repr__(self):
-        return self.__str__()
-    
-    @classmethod
-    def find_all(cls) -> list:
-        """Find all users in the database"""
+        return f"User: {self.name} ({self.id})"
 
-        users = []
-        data = cls.db_connector.all()
+if __name__ == "__main__":
+    # Create a device
+    user1 = User("one@mci.edu", "User One",)
+    user2 = User("two@mci.edu", "User Two", ) 
+    user3 = User( "three@mci.edu", "User Three") 
+    user1.store_data()
+    user2.store_data()
+    user3.store_data()
+    user4 = User("User Four", "four@mci.edu") 
+    user4.store_data()
 
-        for u in data:
-            user = cls(u["id"], u["name"])
-            users.append(user)
-        
-        return users
+    loaded_user = User.find_by_attribute("id", "one@mci.edu")
+    if loaded_user:
+        print(f"Loaded: {loaded_user}")
+    else:
+        print("User not found.")
 
-
-    @classmethod
-    def find_by_attribute(cls, by_attribute : str, attribute_value : str) -> 'User':
-        """From the matches in the database, select the user with the given attribute value"""
-        q = Query()
-        result = cls.db_connector.search(q[by_attribute] == attribute_value)
-
-        if result: 
-            u = result[0]
-            return cls(u["id"], u["name"])
-        return None #wenn nichts gefunden 
+    all_users = User.find_all()
+    for user in all_users:
+        print(user)

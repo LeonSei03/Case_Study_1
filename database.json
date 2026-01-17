@@ -1,1 +1,36 @@
-{"devices": {"5": {"device_name": "TestGer\u00e4t1", "device_id": "1", "managed_by_user_id": "ulsess.simon@gmail.com", "is_active": true}, "6": {"device_name": "TestGer\u00e4t2", "device_id": "2", "managed_by_user_id": "leon.seibert@gmail.com", "is_active": true}}, "devices_with_subclass": {}, "users": {"1": {"name": "Simon Ulse\u00df", "id": "ulsess.simon@gmail.com"}, "2": {"name": "Leon Seibert", "id": "leon.seibert@gmail.com"}}}
+{
+    "devices": {
+        "1": {
+            "id": "123",
+            "creation_date": "{TinyDateTime}:2026-01-17T16:35:42.257159",
+            "last_update": "{TinyDateTime}:2026-01-17T17:11:17.388910",
+            "device_name": "Drohne",
+            "managed_by_user_id": "Leongmail",
+            "is_active": true,
+            "end_of_life": "{TinyDate}:2026-01-17"
+        },
+        "2": {
+            "id": "1234",
+            "creation_date": "{TinyDateTime}:2026-01-17T17:11:34.911463",
+            "last_update": "{TinyDateTime}:2026-01-17T17:11:43.610995",
+            "device_name": "K\u00fcche",
+            "managed_by_user_id": "SimonGmail",
+            "is_active": true,
+            "end_of_life": "{TinyDate}:2026-01-17"
+        }
+    },
+    "users": {
+        "1": {
+            "id": "Leongmail",
+            "creation_date": "{TinyDateTime}:2026-01-17T16:35:26.173832",
+            "last_update": "{TinyDateTime}:2026-01-17T17:11:01.213435",
+            "name": "Leon"
+        },
+        "2": {
+            "id": "SimonGmail",
+            "creation_date": "{TinyDateTime}:2026-01-17T17:10:53.806972",
+            "last_update": "{TinyDateTime}:2026-01-17T17:10:53.807346",
+            "name": "Simon"
+        }
+    }
+}
