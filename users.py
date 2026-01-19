@@ -24,7 +24,7 @@ class User(Serializable):
         return f"User: {self.name} ({self.id})"
 
 if __name__ == "__main__":
-    # Create a device
+    # Create a user 
     user1 = User("one@mci.edu", "User One",)
     user2 = User("two@mci.edu", "User Two", ) 
     user3 = User( "three@mci.edu", "User Three") 
