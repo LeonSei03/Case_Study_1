@@ -5,6 +5,7 @@ def session_states():
         #für devices
         "edit_device_id":None, 
 
+        "edit_maintenance" : None, 
         #für users
         "users_edit_user_id": None, 
         "users_search_result":None, 

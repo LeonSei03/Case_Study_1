@@ -14,7 +14,7 @@ class Maintenance(Serializable):
         self.device_name = device_name
         self.device_id = device_id
         self.next_maintenance_date = next_maintenance_date
-        self.cost_per_quarter = int(cost_per_quarter)
+        self.cost_per_quarter = float(cost_per_quarter)
     
 
     @classmethod
