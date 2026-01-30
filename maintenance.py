@@ -10,7 +10,6 @@ class Maintenance(Serializable):
 
     def __init__(self, id, device_name: str,  device_id: str, next_maintenance_date: date, cost_per_quarter: float, creation_date: datetime = None, last_update: datetime = None) -> None:
         super().__init__(id, creation_date, last_update)
-        #self.id = id
         self.device_name = device_name
         self.device_id = device_id
         self.next_maintenance_date = next_maintenance_date
@@ -43,25 +42,3 @@ class Maintenance(Serializable):
             totals[key] = totals.get(key, 0.0) + float(m.cost_per_quarter)
         return totals
 
-if __name__ == "__main__":
-    #Device anlegen
-    d = Device("Laser Cutter", "DEV-001", "one@mci.edu")
-    d.store_data()
-
-    #Maintenance für dieses Device anlegen
-    m = Maintenance(
-        device_name="Gerät",
-        device_id="DEV-001",
-        id="MNT-DEV-001-2026-02-01",
-        next_maintenance_date=date(2026, 2, 1),
-        cost_per_quarter=120
-    )
-    m.store_data()
-
-    #Test: wieder laden
-    loaded = Maintenance.find_by_attribute("device_id", "DEV-001")
-    print("Loaded:", loaded)
-
-    # alle Wartungen
-    for x in Maintenance.find_all():
-        print(x)

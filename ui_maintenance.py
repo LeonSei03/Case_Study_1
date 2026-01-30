@@ -57,8 +57,6 @@ def ui_maintenance():
 
     if aktion == "Alle Wartungen anzeigen":
 
-        st.subheader("Nächste Wartungen")
-
         upcoming = Maintenance.upcoming()
 
         if not upcoming:
