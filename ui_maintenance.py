@@ -94,13 +94,34 @@ def ui_maintenance():
                 delete_clicked = st.button("Löschen", key="delete_" + m.id)
                 if delete_clicked:
                     m.delete()
-                    #flash message wird angezeigt 
                     flash(f"Wartung {m.id} gelöscht")
-                    #Flash statt st.success direkt + rerun (sonst sieht man es nicht)
-                    #wenn gerade derselbe Nutzer im Edit-Modus war: Edit-Modus beenden
-                    if st.session_state["users_edit_user_id"] == m.id:
-                        st.session_state["users_edit_user_id"] = None
+                    if st.session_state["edit_maintenance"] == m.id:
+                        st.session_state["edit_maintenance"] = None
                     st.rerun()
+
+            if st.session_state["edit_maintenance"] == m.id:
+                st.info(f"Wartung bearbeiten: {m.device_name}")
+
+                # Form-Key muss eindeutig sein weil sonst vermischen von den form-states, deswegen + u.id
+                with st.form("edit_form_" + m.id):
+                    new_cost = st.text_input("Neue Kosten", value=m.cost_per_quarter)
+                    new_date = st.text_input("Neues Datum", value=m.next_maintenance_date)
+                    submit_row_edit = st.form_submit_button("Speichern")
+
+                if submit_row_edit:
+                    new_cost = new_cost.strip()
+                    new_date = new_date.strip()
+                    if new_cost == "":
+                        st.error("Bitte Kosten UND Datum eintragen")
+                    else:
+                        m.cost_per_quarter = new_cost
+                        m.next_maintenance_date = new_date
+                        m.store_data()
+
+                        #Flash message setzen, Edit-Modus schließen, dann rerunen
+                        flash("Warunt aktualisiert")
+                        st.session_state["edit_maintenance"] = None
+                        st.rerun()
 
         st.subheader("Wartungskosten pro Quartal")
         totals = Maintenance.costs_by_quarter()
